@@ -1,0 +1,1 @@
+mkdir "components/animata/text" && type null > components/animata/text/scroll-reveal.tsx
