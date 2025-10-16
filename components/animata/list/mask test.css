@@ -1,0 +1,126 @@
+import { useEffect } from "react";
+
+export function useMousePosition(
+  ref: React.RefObject<HTMLElement>,
+  callback?: ({ x, y }: { x: number; y: number }) => void,
+) {
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      const { clientX, clientY } = event;
+      const { top, left } = ref.current?.getBoundingClientRect() || {
+        top: 0,
+        left: 0,
+      };
+
+      callback?.({ x: clientX - left, y: clientY - top });
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const { clientX, clientY } = event.touches[0];
+      const { top, left } = ref.current?.getBoundingClientRect() || {
+        top: 0,
+        left: 0,
+      };
+
+      callback?.({ x: clientX - left, y: clientY - top });
+    };
+
+    ref.current?.addEventListener("mousemove", handleMouseMove);
+    ref.current?.addEventListener("touchmove", handleTouchMove);
+
+    const nodeRef = ref.current;
+    return () => {
+      nodeRef?.removeEventListener("mousemove", handleMouseMove);
+      nodeRef?.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [ref, callback]);
+}
+
+
+
+
+
+
+<svg width="381" height="375" viewBox="0 0 381 375" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M348.09 76.7203C406.366 159.961 382.965 276.897 295.822 337.905C208.679 398.913 90.7934 380.89 32.5176 297.649C-25.7581 214.409 -2.35664 97.4724 84.7864 36.4645C171.929 -24.5433 289.815 -6.52023 348.09 76.7203Z" fill="#AA1C1C"/>
+</svg>
+
+
+
+
+
+theme: {
+    extend: {
+     colors: {
+        foreground: "hsl(var(--foreground))",
+     }
+    },
+  },
+
+
+
+theme: {
+    extend: {
+     colors: {
+        foreground: "hsl(var(--foreground))",
+     }
+    },
+  },
+
+"use client";
+
+import { useRef, useState } from "react";
+import { motion } from "framer-motion";
+
+import { useMousePosition } from "@/hooks/use-mouse-position";
+import { cn } from "@/lib/utils";
+
+interface MaskTextProps extends React.HTMLAttributes<HTMLDivElement> {
+  revealText: string;
+  originalText: React.ReactNode | string;
+}
+export default function MaskText({
+  revealText = "Hello World!",
+  originalText = "Bye World!",
+  className,
+}: MaskTextProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [{ x, y }, setMousePosition] = useState({ x: 0, y: 0 });
+  useMousePosition(containerRef, setMousePosition);
+  const size = isHovered ? 500 : 50;
+
+  const common =
+    "flex h-full w-full items-center justify-center text-5xl font-bold leading-snug text-foreground";
+
+  return (
+    <div className={cn("relative h-screen", className)} ref={containerRef}>
+      <motion.div
+        className={cn(common, "absolute bg-black")}
+        style={{
+          maskImage: "url(/circle.svg)",
+          maskRepeat: "no-repeat",
+          maskSize: "50px",
+        }}
+        animate={{
+          WebkitMaskPosition: `${x - size / 2}px ${y - size / 2}px`,
+          WebkitMaskSize: `${size}px`,
+        }}
+        transition={{ type: "tween", ease: "backOut", duration: 0.5 }}
+      >
+        <p
+          onMouseEnter={() => {
+            setIsHovered(true);
+          }}
+          onMouseLeave={() => {
+            setIsHovered(false);
+          }}
+        >
+          {revealText}
+        </p>
+      </motion.div>
+
+      <div className={common}>{originalText}</div>
+    </div>
+  );
+}
